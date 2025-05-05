@@ -1,4 +1,4 @@
-# Assignment One - Mobile App Development Two
+# Assignment Two - Mobile App Development Two
 
 ## Student Information
 
