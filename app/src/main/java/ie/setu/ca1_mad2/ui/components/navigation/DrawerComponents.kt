@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -48,7 +49,8 @@ data class DrawerItem(
 @Composable
 fun DrawerContent(
     navController: NavController,
-    onDestinationClicked: (String) -> Unit
+    onDestinationClicked: (String) -> Unit,
+    onSignOut: () -> Unit
 ) {
     val drawerItems = listOf(
         DrawerItem(
@@ -110,6 +112,14 @@ fun DrawerContent(
 
             HorizontalDivider()
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Sign Out button
+            DrawerMenuItem(
+                icon = Icons.AutoMirrored.Filled.Logout,
+                label = "Sign Out",
+                onClick = onSignOut,
+                contentDescription = "Sign out of application"
+            )
         }
     }
 }

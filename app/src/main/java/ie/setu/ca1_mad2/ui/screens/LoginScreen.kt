@@ -1,4 +1,3 @@
-// Create a new file: ie/setu/ca1_mad2/ui/screens/LoginScreen.kt
 package ie.setu.ca1_mad2.ui.screens
 
 import androidx.compose.foundation.layout.*
