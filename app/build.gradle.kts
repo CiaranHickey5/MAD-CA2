@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.kapt")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -71,4 +72,8 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.51")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
 }
