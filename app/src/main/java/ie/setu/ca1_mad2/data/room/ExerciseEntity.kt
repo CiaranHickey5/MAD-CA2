@@ -6,8 +6,7 @@ import ie.setu.ca1_mad2.model.Exercise
 
 @Entity(tableName = "exercises")
 data class ExerciseEntity(
-    @PrimaryKey
-    val id: String,
+    @PrimaryKey val id: Int,
     val name: String,
     val muscleGroup: String
 ) {

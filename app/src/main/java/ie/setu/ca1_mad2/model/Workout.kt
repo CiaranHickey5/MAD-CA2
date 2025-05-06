@@ -1,9 +1,9 @@
 package ie.setu.ca1_mad2.model
 
-import java.util.UUID
+import androidx.room.PrimaryKey
 
 data class Workout(
-    val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey val id: Int,
     val name: String,
     val description: String = "",
     val exercises: MutableList<Exercise> = mutableListOf()
