@@ -1,9 +1,9 @@
 package ie.setu.ca1_mad2.ui.components.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,7 +27,7 @@ data class NavBarItem(
 fun getMainNavItems() = listOf(
     NavBarItem(AppRoutes.HOME, "Home", Icons.Default.Home),
     NavBarItem(AppRoutes.ADD_WORKOUT, "Add Workout", Icons.Default.Add),
-    NavBarItem(AppRoutes.LIST_WORKOUTS, "Workouts", Icons.Default.List)
+    NavBarItem(AppRoutes.LIST_WORKOUTS, "Workouts", Icons.AutoMirrored.Filled.List)
 )
 
 @Composable
