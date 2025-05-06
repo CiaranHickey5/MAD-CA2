@@ -79,4 +79,5 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.kotlinx.metadata.jvm)
     testImplementation(libs.androidx.room.testing)
+    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.9.0")
 }
