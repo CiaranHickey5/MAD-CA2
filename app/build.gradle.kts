@@ -78,4 +78,5 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.kotlinx.metadata.jvm)
+    testImplementation(libs.androidx.room.testing)
 }

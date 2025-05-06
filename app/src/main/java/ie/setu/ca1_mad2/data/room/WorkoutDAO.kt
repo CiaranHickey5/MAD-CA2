@@ -20,7 +20,7 @@ interface WorkoutDAO {
 
     @Transaction
     @Query("SELECT * FROM workouts WHERE id = :id")
-    fun getWorkoutWithExercisesById(id: String): Flow<WorkoutWithExercises>
+    fun getWorkoutWithExercisesById(id: Int): Flow<WorkoutWithExercises>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWorkout(workout: WorkoutEntity)
@@ -35,8 +35,8 @@ interface WorkoutDAO {
     suspend fun insertWorkoutExerciseCrossRef(crossRef: WorkoutExerciseCrossRef)
 
     @Query("DELETE FROM workout_exercise_crossref WHERE workoutId = :workoutId AND exerciseId = :exerciseId")
-    suspend fun deleteWorkoutExerciseCrossRef(workoutId: String, exerciseId: String)
+    suspend fun deleteWorkoutExerciseCrossRef(workoutId: Int, exerciseId: Int)
 
     @Query("DELETE FROM workout_exercise_crossref WHERE workoutId = :workoutId")
-    suspend fun deleteAllExercisesFromWorkout(workoutId: String)
+    suspend fun deleteAllExercisesFromWorkout(workoutId: Int)
 }

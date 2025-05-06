@@ -88,7 +88,7 @@ fun ListWorkoutsScreen(
             onSave = {
                 workoutToEdit?.let { workout ->
                     viewModel.updateWorkout(
-                        workoutId = workout.id,
+                        workoutId = workout.id.toString(),
                         newName = editedName,
                         newDescription = editedDescription
                     )
@@ -110,7 +110,7 @@ fun ListWorkoutsScreen(
             itemName = workoutToDelete?.name ?: "",
             onConfirm = {
                 workoutToDelete?.let { workout ->
-                    viewModel.deleteWorkout(workout.id)
+                    viewModel.deleteWorkout(workout.id.toString())
                 }
                 showDeleteDialog = false
                 workoutToDelete = null

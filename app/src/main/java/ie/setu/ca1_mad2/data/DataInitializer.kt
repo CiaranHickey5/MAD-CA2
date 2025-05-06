@@ -19,6 +19,7 @@ class DataInitializer @Inject constructor(
 
             samples.forEach { (name, description) ->
                 val workout = Workout(
+                    id = 0,
                     name = name,
                     description = description
                 )
