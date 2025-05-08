@@ -11,7 +11,8 @@ import ie.setu.ca1_mad2.AuthViewModel
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onGoogleSignInClick: () -> Unit = {} // Default value to make it optional
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -92,6 +93,24 @@ fun LoginScreen(
                 )
             } else {
                 Text(if (isRegisterMode) "Register" else "Login")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Google Sign-In button
+        OutlinedButton(
+            onClick = onGoogleSignInClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // We'll use text rather than image for now since we don't have the Google icon
+                // You can add the icon later
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Sign in with Google")
             }
         }
 
