@@ -13,7 +13,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -25,6 +28,7 @@ import ie.setu.ca1_mad2.ui.components.navigation.BottomNavigationBar
 import ie.setu.ca1_mad2.ui.components.navigation.DrawerContent
 import ie.setu.ca1_mad2.ui.components.navigation.TopAppBarWithDrawer
 import ie.setu.ca1_mad2.ui.screens.LoginScreen
+import ie.setu.ca1_mad2.ui.screens.SplashScreen
 import ie.setu.ca1_mad2.ui.theme.CA1MAD2Theme
 import kotlinx.coroutines.launch
 
@@ -63,7 +67,13 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 val currentUser by authViewModel.currentUser.collectAsState()
 
-                if (currentUser == null) {
+                // Add state for showing splash screen
+                var showSplash by remember { mutableStateOf(true) }
+
+                // Show splash screen
+                if (showSplash) {
+                    SplashScreen(onSplashFinished = { showSplash = false })
+                } else if (currentUser == null) {
                     LoginScreen(
                         viewModel = authViewModel,
                         onLoginSuccess = {
