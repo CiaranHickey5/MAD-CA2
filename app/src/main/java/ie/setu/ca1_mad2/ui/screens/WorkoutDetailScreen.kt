@@ -74,8 +74,8 @@ fun WorkoutDetailScreen(
             onSave = {
                 exerciseToEdit?.let { exercise ->
                     viewModel.updateWorkoutExercise(
-                        workoutId = workout.id,
-                        exerciseId = exercise.id,
+                        workoutId = workout.id.toString(),
+                        exerciseId = exercise.id.toString(),
                         newName = editedName,
                         newMuscleGroup = editedMuscleGroups.joinToString(", ")
                     )
@@ -98,8 +98,8 @@ fun WorkoutDetailScreen(
             onConfirm = {
                 exerciseToDelete?.let { exercise ->
                     viewModel.removeExerciseFromWorkout(
-                        workoutId = workout.id,
-                        exerciseId = exercise.id
+                        workoutId = workout.id.toString(),
+                        exerciseId = exercise.id.toString()
                     )
                 }
                 showDeleteDialog = false
@@ -190,7 +190,7 @@ fun WorkoutDetailScreen(
 
                 DefaultExerciseSelector(
                     onExerciseSelected = { exercise ->
-                        viewModel.addExerciseToWorkout(workout.id, exercise.name, exercise.muscleGroup)
+                        viewModel.addExerciseToWorkout(workout.id.toString(), exercise.name, exercise.muscleGroup)
                         // Reset custom exercise
                         exerciseName = ""
                         selectedMuscleGroups = emptyList()
@@ -230,7 +230,7 @@ fun WorkoutDetailScreen(
                         if (exerciseName.isNotBlank() && selectedMuscleGroups.isNotEmpty()) {
                             // Join groups with comma
                             val muscleGroupString = selectedMuscleGroups.joinToString(", ")
-                            viewModel.addExerciseToWorkout(workout.id, exerciseName, muscleGroupString)
+                            viewModel.addExerciseToWorkout(workout.id.toString(), exerciseName, muscleGroupString)
                             exerciseName = ""
                             selectedMuscleGroups = emptyList()
                             showValidationErrors = false

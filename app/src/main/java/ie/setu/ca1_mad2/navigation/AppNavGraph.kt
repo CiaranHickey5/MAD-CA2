@@ -58,7 +58,8 @@ fun AppNavGraph(
             arguments = listOf(navArgument("workoutId") { type = NavType.StringType })
         ) { backStackEntry ->
             val workoutId = backStackEntry.arguments?.getString("workoutId") ?: return@composable
-            val workout = workouts.find { it.id == workoutId } ?: return@composable
+            val workoutIdInt = workoutId.toIntOrNull() ?: return@composable
+            val workout = workouts.find { it.id == workoutIdInt } ?: return@composable
 
             WorkoutDetailScreen(
                 viewModel = viewModel,

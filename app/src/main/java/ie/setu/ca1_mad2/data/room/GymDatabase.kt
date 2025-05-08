@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
         WorkoutEntity::class,
         WorkoutExerciseCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class GymDatabase : RoomDatabase() {

@@ -78,7 +78,7 @@ class GymTrackerViewModel @Inject constructor(
         if (name.isNotBlank()) {
             viewModelScope.launch {
                 repository.insertExercise(
-                    Exercise(name = name, muscleGroup = muscleGroup)
+                    Exercise(id = 0, name = name, muscleGroup = muscleGroup)
                 )
             }
         }
@@ -89,7 +89,7 @@ class GymTrackerViewModel @Inject constructor(
         if (name.isNotBlank()) {
             viewModelScope.launch {
                 repository.insertWorkout(
-                    Workout(name = name, description = description)
+                    Workout(id = 0, name = name, description = description)
                 )
             }
         }
@@ -99,8 +99,11 @@ class GymTrackerViewModel @Inject constructor(
     fun updateWorkout(workoutId: String, newName: String, newDescription: String) {
         if (newName.isNotBlank()) {
             viewModelScope.launch {
+                // Convert String ID to Int
+                val workoutIdInt = workoutId.toIntOrNull() ?: return@launch
+
                 // Find the workout
-                val workout = _workouts.value.find { it.id == workoutId } ?: return@launch
+                val workout = _workouts.value.find { it.id == workoutIdInt } ?: return@launch
 
                 // Update the workout
                 val updatedWorkout = workout.copy(
@@ -116,7 +119,8 @@ class GymTrackerViewModel @Inject constructor(
     // Delete a workout by ID
     fun deleteWorkout(workoutId: String) {
         viewModelScope.launch {
-            val workout = _workouts.value.find { it.id == workoutId } ?: return@launch
+            val workoutIdInt = workoutId.toIntOrNull() ?: return@launch
+            val workout = _workouts.value.find { it.id == workoutIdInt } ?: return@launch
             repository.deleteWorkout(workout)
         }
     }
@@ -125,12 +129,14 @@ class GymTrackerViewModel @Inject constructor(
     fun addExerciseToWorkout(workoutId: String, exerciseName: String, exerciseMuscleGroup: String) {
         if (exerciseName.isNotBlank()) {
             viewModelScope.launch {
+                val workoutIdInt = workoutId.toIntOrNull() ?: return@launch
                 val exercise = Exercise(
+                    id = 0,
                     name = exerciseName,
                     muscleGroup = exerciseMuscleGroup
                 )
 
-                repository.addExerciseToWorkout(workoutId, exercise)
+                repository.addExerciseToWorkout(workoutIdInt.toString(), exercise)
             }
         }
     }
@@ -139,8 +145,9 @@ class GymTrackerViewModel @Inject constructor(
     fun updateWorkoutExercise(workoutId: String, exerciseId: String, newName: String, newMuscleGroup: String) {
         if (newName.isNotBlank()) {
             viewModelScope.launch {
+                val exerciseIdInt = exerciseId.toIntOrNull() ?: return@launch
                 val exercise = Exercise(
-                    id = exerciseId,
+                    id = exerciseIdInt,
                     name = newName,
                     muscleGroup = newMuscleGroup
                 )
@@ -153,7 +160,9 @@ class GymTrackerViewModel @Inject constructor(
     // Remove an exercise from a specific workout
     fun removeExerciseFromWorkout(workoutId: String, exerciseId: String) {
         viewModelScope.launch {
-            repository.removeExerciseFromWorkout(workoutId, exerciseId)
+            val workoutIdInt = workoutId.toIntOrNull() ?: return@launch
+            val exerciseIdInt = exerciseId.toIntOrNull() ?: return@launch
+            repository.removeExerciseFromWorkout(workoutIdInt.toString(), exerciseIdInt.toString())
         }
     }
 }

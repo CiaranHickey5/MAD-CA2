@@ -22,7 +22,7 @@ class GymRepository @Inject constructor(
         .map { entities -> entities.map { it.toExercise() } }
 
     suspend fun getExerciseById(id: String): Flow<Exercise> =
-        exerciseDao.getExerciseById(id).map { it.toExercise() }
+        exerciseDao.getExerciseById(id.toIntOrNull() ?: 0).map { it.toExercise() }
 
     suspend fun insertExercise(exercise: Exercise) {
         exerciseDao.insertExercise(ExerciseEntity.fromExercise(exercise))
@@ -41,7 +41,7 @@ class GymRepository @Inject constructor(
         .map { workoutsWithExercises -> workoutsWithExercises.map { it.toWorkout() } }
 
     suspend fun getWorkoutById(id: String): Flow<Workout> =
-        workoutDao.getWorkoutWithExercisesById(id).map { it.toWorkout() }
+        workoutDao.getWorkoutWithExercisesById(id.toIntOrNull() ?: 0).map { it.toWorkout() }
 
     suspend fun insertWorkout(workout: Workout) {
         // Insert the workout
@@ -79,10 +79,10 @@ class GymRepository @Inject constructor(
         // Make sure exercise exists
         insertExercise(exercise)
 
-        // Create cross-reference
+        // Create cross-reference with proper conversion
         workoutDao.insertWorkoutExerciseCrossRef(
             WorkoutExerciseCrossRef(
-                workoutId = workoutId,
+                workoutId = workoutId.toIntOrNull() ?: 0,
                 exerciseId = exercise.id
             )
         )
@@ -90,6 +90,9 @@ class GymRepository @Inject constructor(
 
     // Remove exercise from workout
     suspend fun removeExerciseFromWorkout(workoutId: String, exerciseId: String) {
-        workoutDao.deleteWorkoutExerciseCrossRef(workoutId, exerciseId)
+        workoutDao.deleteWorkoutExerciseCrossRef(
+            workoutId.toIntOrNull() ?: 0,
+            exerciseId.toIntOrNull() ?: 0
+        )
     }
 }
