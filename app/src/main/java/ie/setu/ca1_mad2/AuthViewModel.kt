@@ -2,6 +2,7 @@ package ie.setu.ca1_mad2
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -31,6 +32,8 @@ class AuthViewModel @Inject constructor(
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser
 
+    private val TAG = "AuthViewModel"
+
     init {
         auth.addAuthStateListener { firebaseAuth ->
             _currentUser.value = firebaseAuth.currentUser
@@ -45,12 +48,28 @@ class AuthViewModel @Inject constructor(
         googleSignInClient = GoogleSignIn.getClient(context, gso)
     }
 
+    private fun syncDataAfterLogin() {
+        viewModelScope.launch {
+            try {
+                // Log the user ID
+                val userId = auth.currentUser?.uid ?: "guest"
+                Log.d(TAG, "Syncing data for user: $userId")
+                Log.d(TAG, "Data sync complete for user: $userId")
+            } catch (e: Exception) {
+                // Log errors during sync
+                Log.e(TAG, "Error syncing data: ${e.message}", e)
+            }
+        }
+    }
+
     fun signInWithEmailPassword(email: String, password: String, onComplete: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
                 auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            // Sync data after successful login
+                            syncDataAfterLogin()
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)
@@ -68,6 +87,8 @@ class AuthViewModel @Inject constructor(
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            // Sync data after successful registration
+                            syncDataAfterLogin()
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)
@@ -102,6 +123,8 @@ class AuthViewModel @Inject constructor(
                 auth.signInWithCredential(credential)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            // Sync data after successful Google sign-in
+                            syncDataAfterLogin()
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)

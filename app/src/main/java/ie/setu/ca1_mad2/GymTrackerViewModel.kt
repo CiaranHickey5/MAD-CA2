@@ -1,9 +1,9 @@
 package ie.setu.ca1_mad2
 
+import ie.setu.ca1_mad2.data.room.GymRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ie.setu.ca1_mad2.data.room.GymRepository
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
 import kotlinx.coroutines.flow.MutableStateFlow

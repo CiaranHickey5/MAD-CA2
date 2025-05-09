@@ -1,10 +1,5 @@
 package ie.setu.ca1_mad2.data.room
 
-import ie.setu.ca1_mad2.data.room.ExerciseDAO
-import ie.setu.ca1_mad2.data.room.ExerciseEntity
-import ie.setu.ca1_mad2.data.room.WorkoutDAO
-import ie.setu.ca1_mad2.data.room.WorkoutEntity
-import ie.setu.ca1_mad2.data.room.WorkoutExerciseCrossRef
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
 import kotlinx.coroutines.flow.Flow
