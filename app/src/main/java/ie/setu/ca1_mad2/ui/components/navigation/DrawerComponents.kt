@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ie.setu.ca1_mad2.navigation.AppRoutes
+import androidx.compose.material.icons.filled.Settings
 
 data class DrawerItem(
     val icon: ImageVector,
@@ -82,6 +83,12 @@ fun DrawerContent(
             label = "Exercises",
             route = AppRoutes.LIST_EXERCISE,
             contentDescription = "Navigate to Exercise List"
+        ),
+        DrawerItem(
+            icon = Icons.Default.Settings,
+            label = "Settings",
+            route = AppRoutes.SETTINGS,
+            contentDescription = "Navigate to Settings"
         )
     )
 

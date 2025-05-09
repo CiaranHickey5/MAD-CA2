@@ -73,5 +73,9 @@ fun AppNavGraph(
         composable(AppRoutes.LIST_EXERCISE) {
             ListExerciseScreen(exercises = exercises)
         }
+
+        composable(AppRoutes.SETTINGS) {
+            SettingsScreen()
+        }
     }
 }

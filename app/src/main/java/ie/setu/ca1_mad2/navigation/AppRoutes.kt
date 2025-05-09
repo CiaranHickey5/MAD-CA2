@@ -8,4 +8,5 @@ object AppRoutes {
     const val ADD_WORKOUT = "addWorkout"
     const val LIST_WORKOUTS = "listWorkouts"
     const val WORKOUT_DETAIL = "workoutDetail"
+    const val SETTINGS = "settings"
 }
