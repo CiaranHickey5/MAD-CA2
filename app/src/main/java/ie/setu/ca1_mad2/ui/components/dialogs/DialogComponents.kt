@@ -1,17 +1,24 @@
 package ie.setu.ca1_mad2.ui.components.dialogs
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -153,6 +160,110 @@ fun EditExerciseDialog(
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun MuscleGroupFilterDialog(
+    muscleGroups: List<String>,
+    selectedMuscleGroup: String?,
+    onMuscleGroupSelected: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Filter by Muscle Group") },
+        text = {
+            LazyColumn {
+                item {
+                    ListItem(
+                        headlineContent = { Text("All muscle groups") },
+                        leadingContent = {
+                            RadioButton(
+                                selected = selectedMuscleGroup == null,
+                                onClick = { onMuscleGroupSelected(null) }
+                            )
+                        },
+                        modifier = Modifier.clickable { onMuscleGroupSelected(null) }
+                    )
+                }
+
+                items(muscleGroups) { muscleGroup ->
+                    ListItem(
+                        headlineContent = { Text(muscleGroup) },
+                        leadingContent = {
+                            RadioButton(
+                                selected = selectedMuscleGroup == muscleGroup,
+                                onClick = { onMuscleGroupSelected(muscleGroup) }
+                            )
+                        },
+                        modifier = Modifier.clickable { onMuscleGroupSelected(muscleGroup) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
+fun AllExercisesDialog(
+    exercises: List<Exercise>,
+    onExerciseSelected: (Exercise) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("All Exercises") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                // Group exercises by primary muscle group
+                val groupedExercises = exercises.groupBy {
+                    it.muscleGroup.split(", ").first().trim()
+                }.toSortedMap()
+
+                LazyColumn {
+                    groupedExercises.forEach { (muscleGroup, exercisesForMuscle) ->
+                        item {
+                            Text(
+                                text = muscleGroup,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+
+                        items(exercisesForMuscle) { exercise ->
+                            ListItem(
+                                headlineContent = { Text(exercise.name) },
+                                supportingContent = { Text(exercise.muscleGroup) },
+                                modifier = Modifier
+                                    .clickable {
+                                        onExerciseSelected(exercise)
+                                    }
+                                    .padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
             }
         }
     )
