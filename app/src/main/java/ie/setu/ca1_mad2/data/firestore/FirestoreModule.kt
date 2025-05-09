@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import ie.setu.ca1_mad2.data.firestore.FirestoreRepository
+import ie.setu.ca1_mad2.data.firestore.StorageRepository
 import javax.inject.Singleton
 
 @Module
@@ -16,4 +17,11 @@ object FirestoreModule {
     fun provideFirestoreRepository(): FirestoreRepository {
         return FirestoreRepository()
     }
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(): StorageRepository {
+        return StorageRepository()
+    }
 }
+

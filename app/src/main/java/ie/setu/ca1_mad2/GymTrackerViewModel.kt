@@ -1,11 +1,15 @@
 package ie.setu.ca1_mad2
 
+import android.net.Uri
+import android.util.Log
 import ie.setu.ca1_mad2.data.room.GymRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ie.setu.ca1_mad2.data.firestore.StorageRepository
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
+import ie.setu.ca1_mad2.model.WorkoutImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +21,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GymTrackerViewModel @Inject constructor(
-    private val repository: GymRepository
+    private val repository: GymRepository,
+    private val storageRepository: StorageRepository
 ) : ViewModel() {
+    private val TAG = "GymTrackerViewModel"
 
     // Exercise state
     private val _exercises = MutableStateFlow<List<Exercise>>(emptyList())
@@ -31,6 +37,12 @@ class GymTrackerViewModel @Inject constructor(
     // Muscle group filter state
     private val _filterMuscleGroups = MutableStateFlow<List<String>>(emptyList())
     val filterMuscleGroups = _filterMuscleGroups.asStateFlow()
+
+    private val _workoutImages = MutableStateFlow<Map<String, List<WorkoutImage>>>(emptyMap())
+    val workoutImages: StateFlow<Map<String, List<WorkoutImage>>> = _workoutImages.asStateFlow()
+
+    private val _uploadingImage = MutableStateFlow(false)
+    val uploadingImage: StateFlow<Boolean> = _uploadingImage.asStateFlow()
 
     // Filtered workouts based on muscle group filters
     val filteredWorkouts = combine(workouts, filterMuscleGroups) { workoutList, muscleGroups ->
@@ -116,8 +128,22 @@ class GymTrackerViewModel @Inject constructor(
     // Delete a workout by ID
     fun deleteWorkout(workoutId: String) {
         viewModelScope.launch {
-            val workout = _workouts.value.find { it.id == workoutId } ?: return@launch
-            repository.deleteWorkout(workout)
+            try {
+                val workout = _workouts.value.find { it.id == workoutId } ?: return@launch
+                repository.deleteWorkout(workout)
+
+                // Delete all images for this workout
+                storageRepository.deleteAllWorkoutImages(workoutId)
+
+                // Remove the images from the state
+                val updatedImagesMap = _workoutImages.value.toMutableMap()
+                updatedImagesMap.remove(workoutId)
+                _workoutImages.value = updatedImagesMap
+
+                Log.d(TAG, "Successfully deleted workout and its images: $workoutId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting workout or its images: ${e.message}", e)
+            }
         }
     }
 
@@ -154,6 +180,57 @@ class GymTrackerViewModel @Inject constructor(
     fun removeExerciseFromWorkout(workoutId: String, exerciseId: String) {
         viewModelScope.launch {
             repository.removeExerciseFromWorkout(workoutId, exerciseId)
+        }
+    }
+
+    // Upload an image
+    fun uploadWorkoutImage(imageUri: Uri, workoutId: String) {
+        viewModelScope.launch {
+            try {
+                _uploadingImage.value = true
+                val workoutImage = storageRepository.uploadWorkoutImage(imageUri, workoutId)
+
+                // Update the images map with the new image
+                val currentImages = _workoutImages.value[workoutId] ?: emptyList()
+                _workoutImages.value = _workoutImages.value + (workoutId to (currentImages + workoutImage))
+
+                Log.d(TAG, "Successfully uploaded image for workout: $workoutId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error uploading image: ${e.message}", e)
+            } finally {
+                _uploadingImage.value = false
+            }
+        }
+    }
+
+    // Load images for a workout
+    fun loadWorkoutImages(workoutId: String) {
+        viewModelScope.launch {
+            try {
+                storageRepository.getWorkoutImagesFlow(workoutId).collect { images ->
+                    _workoutImages.value = _workoutImages.value + (workoutId to images)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading workout images: ${e.message}", e)
+            }
+        }
+    }
+
+    // Delete an image
+    fun deleteWorkoutImage(workoutImage: WorkoutImage) {
+        viewModelScope.launch {
+            try {
+                storageRepository.deleteWorkoutImage(workoutImage)
+
+                val workoutId = workoutImage.workoutId
+                val currentImages = _workoutImages.value[workoutId] ?: emptyList()
+                val updatedImages = currentImages.filter { it.id != workoutImage.id }
+                _workoutImages.value = _workoutImages.value + (workoutId to updatedImages)
+
+                Log.d(TAG, "Successfully deleted image: ${workoutImage.id}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting image: ${e.message}", e)
+            }
         }
     }
 }

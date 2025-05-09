@@ -1,4 +1,3 @@
-
 package ie.setu.ca1_mad2.ui.screens
 
 import EmptyStateMessage
@@ -6,6 +5,7 @@ import FormField
 import FormSection
 import SectionHeader
 import SuccessMessage
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,16 +21,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ie.setu.ca1_mad2.GymTrackerViewModel
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
+import ie.setu.ca1_mad2.model.WorkoutImage
 import ie.setu.ca1_mad2.ui.components.cards.ExerciseCard
 import ie.setu.ca1_mad2.ui.components.dialogs.DeleteConfirmationDialog
 import ie.setu.ca1_mad2.ui.components.dialogs.EditExerciseDialog
 import ie.setu.ca1_mad2.ui.components.inputs.DefaultExerciseSelector
 import ie.setu.ca1_mad2.ui.components.inputs.MultiMuscleGroupSelector
+import ie.setu.ca1_mad2.ui.components.media.ImagePicker
+import ie.setu.ca1_mad2.ui.components.media.WorkoutImageGallery
+import ie.setu.ca1_mad2.ui.components.media.ImageUploadingIndicator
 import kotlinx.coroutines.delay
 
 @Composable
@@ -38,6 +43,10 @@ fun WorkoutDetailScreen(
     viewModel: GymTrackerViewModel,
     workout: Workout
 ) {
+    val workoutImages by viewModel.workoutImages.collectAsState()
+    val isUploadingImage by viewModel.uploadingImage.collectAsState()
+    val context = LocalContext.current
+
     // Manage scrolling
     val scrollState = rememberScrollState()
 
@@ -60,6 +69,10 @@ fun WorkoutDetailScreen(
     // States for delete dialog
     var showDeleteDialog by remember { mutableStateOf(false) }
     var exerciseToDelete by remember { mutableStateOf<Exercise?>(null) }
+
+    LaunchedEffect(workout.id) {
+        viewModel.loadWorkoutImages(workout.id)
+    }
 
     // Edit Exercise Dialog
     if (showEditDialog && exerciseToEdit != null) {
@@ -166,6 +179,34 @@ fun WorkoutDetailScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // === ADD THIS NEW SECTION: Workout Images ===
+        SectionHeader(title = "Workout Photos")
+
+        // Uploading indicator
+        ImageUploadingIndicator(isUploading = isUploadingImage)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Image picker
+        ImagePicker(
+            onImageSelected = { uri ->
+                viewModel.uploadWorkoutImage(uri, workout.id)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Image gallery
+        WorkoutImageGallery(
+            images = workoutImages[workout.id] ?: emptyList(),
+            onDeleteImage = { image ->
+                viewModel.deleteWorkoutImage(image)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        // === END OF NEW SECTION ===
 
         // Add Exercise Button
         Button(
