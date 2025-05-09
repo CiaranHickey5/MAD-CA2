@@ -2,7 +2,9 @@ package ie.setu.ca1_mad2.ui.components.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
 import ie.setu.ca1_mad2.ui.components.inputs.MultiMuscleGroupSelector
@@ -267,4 +271,78 @@ fun AllExercisesDialog(
             }
         }
     )
+}
+
+@Composable
+fun MuscleGroupSelectionDialog(
+    muscleGroups: List<String>,
+    selectedMuscleGroups: List<String>,
+    onSelectionChanged: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var tempSelection by remember { mutableStateOf(selectedMuscleGroups) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Select Muscle Groups",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                items(muscleGroups) { muscleGroup ->
+                    val isSelected = tempSelection.contains(muscleGroup)
+
+                    ListItem(
+                        headlineContent = { Text(muscleGroup) },
+                        leadingContent = {
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = { checked ->
+                                    tempSelection = if (checked) {
+                                        tempSelection + muscleGroup
+                                    } else {
+                                        tempSelection - muscleGroup
+                                    }
+                                }
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            tempSelection = if (isSelected) {
+                                tempSelection - muscleGroup
+                            } else {
+                                tempSelection + muscleGroup
+                            }
+                        }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = {
+                        onSelectionChanged(tempSelection)
+                        onDismiss()
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Apply")
+                }
+            }
+        }
+    }
 }

@@ -1,27 +1,28 @@
 package ie.setu.ca1_mad2.ui.components.inputs
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ie.setu.ca1_mad2.ui.components.dialogs.MuscleGroupSelectionDialog
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MultiMuscleGroupSelector(
     selectedMuscleGroups: List<String>,
@@ -34,6 +35,8 @@ fun MultiMuscleGroupSelector(
         "Quadriceps", "Hamstrings", "Glutes", "Calves", "Core", "Cardio"
     )
 
+    var showSelectionDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -44,26 +47,30 @@ fun MultiMuscleGroupSelector(
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+        // Display selected muscle groups as text
+        OutlinedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showSelectionDialog = true }
         ) {
-            muscleGroups.forEach { muscleGroup ->
-                MuscleGroupChip(
-                    muscleGroup = muscleGroup,
-                    isSelected = selectedMuscleGroups.contains(muscleGroup),
-                    onSelectionChanged = { selected ->
-                        if (selected) {
-                            // Add to selection if not already there
-                            if (!selectedMuscleGroups.contains(muscleGroup)) {
-                                onSelectionChanged(selectedMuscleGroups + muscleGroup)
-                            }
-                        } else {
-                            // Remove from selection
-                            onSelectionChanged(selectedMuscleGroups - muscleGroup)
-                        }
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (selectedMuscleGroups.isEmpty())
+                        "Select muscle groups..."
+                    else
+                        selectedMuscleGroups.joinToString(", "),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Select muscle groups"
                 )
             }
         }
@@ -77,53 +84,18 @@ fun MultiMuscleGroupSelector(
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-    }
-}
 
-@Composable
-fun MuscleGroupChip(
-    muscleGroup: String,
-    isSelected: Boolean,
-    onSelectionChanged: (Boolean) -> Unit
-) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected)
-            MaterialTheme.colorScheme.primaryContainer
-        else
-            MaterialTheme.colorScheme.surface,
-        label = "backgroundColor"
-    )
-
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected)
-            MaterialTheme.colorScheme.onPrimaryContainer
-        else
-            MaterialTheme.colorScheme.onSurface,
-        label = "textColor"
-    )
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .border(
-                width = 1.dp,
-                color = if (isSelected)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(16.dp)
+        // Selection dialog
+        if (showSelectionDialog) {
+            MuscleGroupSelectionDialog(
+                muscleGroups = muscleGroups,
+                selectedMuscleGroups = selectedMuscleGroups,
+                onSelectionChanged = { newSelection ->
+                    onSelectionChanged(newSelection)
+                    showSelectionDialog = false
+                },
+                onDismiss = { showSelectionDialog = false }
             )
-            .clickable { onSelectionChanged(!isSelected) }
-    ) {
-        Text(
-            text = muscleGroup,
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        }
     }
 }
