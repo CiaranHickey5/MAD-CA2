@@ -9,13 +9,15 @@ data class WorkoutEntity(
     @PrimaryKey
     val id: String,
     val name: String,
-    val description: String
+    val description: String,
+    val userId: String
 ) {
     companion object {
-        fun fromWorkout(workout: Workout): WorkoutEntity = WorkoutEntity(
+        fun fromWorkout(workout: Workout, userId: String? = null): WorkoutEntity = WorkoutEntity(
             id = workout.id,
             name = workout.name,
-            description = workout.description
+            description = workout.description,
+            userId = userId ?: "guest"
         )
     }
 }

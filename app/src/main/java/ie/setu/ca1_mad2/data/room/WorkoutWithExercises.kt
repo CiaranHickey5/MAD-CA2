@@ -19,11 +19,21 @@ data class WorkoutWithExercises(
     val exercises: List<ExerciseEntity>
 ) {
     fun toWorkout(): Workout {
+        // Filter exercises to only include those belonging to the same user as the workout
+        val userExercises = exercises.filter { it.userId == workout.userId }
+
         return Workout(
             id = workout.id,
             name = workout.name,
             description = workout.description,
-            exercises = exercises.map { it.toExercise() }.toMutableList()
+            exercises = userExercises.map { it.toExercise() }.toMutableList()
         )
     }
+}
+
+// Helper function to create WorkoutWithExercises for a specific user
+fun WorkoutWithExercises.forUser(userId: String): WorkoutWithExercises {
+    return this.copy(
+        exercises = this.exercises.filter { it.userId == userId }
+    )
 }
