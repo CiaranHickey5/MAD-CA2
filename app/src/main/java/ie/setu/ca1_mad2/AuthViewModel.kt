@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ie.setu.ca1_mad2.data.room.GymRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -23,7 +24,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val gymRepository: GymRepository
 ) : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
@@ -35,8 +37,19 @@ class AuthViewModel @Inject constructor(
     private val TAG = "AuthViewModel"
 
     init {
+        // Listen for auth state changes
         auth.addAuthStateListener { firebaseAuth ->
-            _currentUser.value = firebaseAuth.currentUser
+            val user = firebaseAuth.currentUser
+            _currentUser.value = user
+
+            // Handle user state changes
+            if (user != null) {
+                // User is signed in, sync data
+                syncDataAfterLogin()
+            } else {
+                // User is signed out, clear local data
+                clearUserData()
+            }
         }
 
         // Initialize Google Sign-In
@@ -54,10 +67,29 @@ class AuthViewModel @Inject constructor(
                 // Log the user ID
                 val userId = auth.currentUser?.uid ?: "guest"
                 Log.d(TAG, "Syncing data for user: $userId")
+
+                // Sync data from Firestore to local database
+                gymRepository.syncDataFromFirestore()
+
                 Log.d(TAG, "Data sync complete for user: $userId")
             } catch (e: Exception) {
                 // Log errors during sync
                 Log.e(TAG, "Error syncing data: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun clearUserData() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Clearing user data after sign out")
+
+                // Clear local data when signing out
+                gymRepository.clearLocalData()
+
+                Log.d(TAG, "User data cleared successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error clearing user data: ${e.message}", e)
             }
         }
     }
@@ -68,8 +100,7 @@ class AuthViewModel @Inject constructor(
                 auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Sync data after successful login
-                            syncDataAfterLogin()
+                            // Data sync is handled in auth state listener
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)
@@ -87,8 +118,7 @@ class AuthViewModel @Inject constructor(
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Sync data after successful registration
-                            syncDataAfterLogin()
+                            // Data sync is handled in auth state listener
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)
@@ -123,8 +153,7 @@ class AuthViewModel @Inject constructor(
                 auth.signInWithCredential(credential)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Sync data after successful Google sign-in
-                            syncDataAfterLogin()
+                            // Data sync is handled in auth state listener
                             onComplete(true, null)
                         } else {
                             onComplete(false, task.exception?.message)

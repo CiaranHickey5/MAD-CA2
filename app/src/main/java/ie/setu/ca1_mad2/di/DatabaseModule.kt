@@ -23,7 +23,9 @@ object DatabaseModule {
             context,
             GymDatabase::class.java,
             "gym_tracker_database"
-        ).build()
+        )
+            .addMigrations(GymDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

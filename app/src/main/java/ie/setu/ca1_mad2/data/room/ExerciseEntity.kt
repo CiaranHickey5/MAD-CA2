@@ -9,7 +9,8 @@ data class ExerciseEntity(
     @PrimaryKey
     val id: String,
     val name: String,
-    val muscleGroup: String
+    val muscleGroup: String,
+    val userId: String
 ) {
     fun toExercise(): Exercise = Exercise(
         id = id,
@@ -18,10 +19,14 @@ data class ExerciseEntity(
     )
 
     companion object {
-        fun fromExercise(exercise: Exercise): ExerciseEntity = ExerciseEntity(
+        fun fromExercise(exercise: Exercise, userId: String? = null): ExerciseEntity = ExerciseEntity(
             id = exercise.id,
             name = exercise.name,
-            muscleGroup = exercise.muscleGroup
+            muscleGroup = exercise.muscleGroup,
+            userId = userId ?: "guest"
         )
     }
 }
+
+
+

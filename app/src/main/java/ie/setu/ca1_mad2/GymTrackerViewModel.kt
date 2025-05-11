@@ -2,11 +2,12 @@ package ie.setu.ca1_mad2
 
 import android.net.Uri
 import android.util.Log
-import ie.setu.ca1_mad2.data.room.GymRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ie.setu.ca1_mad2.data.firestore.StorageRepository
+import ie.setu.ca1_mad2.data.room.GymRepository
 import ie.setu.ca1_mad2.model.Exercise
 import ie.setu.ca1_mad2.model.Workout
 import ie.setu.ca1_mad2.model.WorkoutImage
@@ -26,12 +27,13 @@ class GymTrackerViewModel @Inject constructor(
     private val storageRepository: StorageRepository
 ) : ViewModel() {
     private val TAG = "GymTrackerViewModel"
+    private val auth = FirebaseAuth.getInstance()
 
-    // Exercise state
+    // Exercise state - Now always user-specific through repository
     private val _exercises = MutableStateFlow<List<Exercise>>(emptyList())
     val exercises: StateFlow<List<Exercise>> = _exercises.asStateFlow()
 
-    // Workout state
+    // Workout state - Now always user-specific through repository
     private val _workouts = MutableStateFlow<List<Workout>>(emptyList())
     val workouts: StateFlow<List<Workout>> = _workouts.asStateFlow()
 
@@ -65,6 +67,14 @@ class GymTrackerViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
+        // Clear data on initialization if there's no authenticated user
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            viewModelScope.launch {
+                repository.clearLocalData()
+            }
+        }
+
         // Collect exercises
         viewModelScope.launch {
             repository.exercises.collect { exerciseList ->
@@ -78,6 +88,20 @@ class GymTrackerViewModel @Inject constructor(
             repository.workouts.collect { workoutList ->
                 Log.d(TAG, "Workouts updated: ${workoutList.size} items")
                 _workouts.value = workoutList
+            }
+        }
+
+        // Listen for auth state changes
+        auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            Log.d(TAG, "Auth state changed. User: ${user?.uid ?: "null"}")
+
+            if (user == null) {
+                // User logged out, clear local data
+                viewModelScope.launch {
+                    repository.clearLocalData()
+                    clearImageFlows()
+                }
             }
         }
     }
@@ -203,12 +227,9 @@ class GymTrackerViewModel @Inject constructor(
                 val workoutImage = storageRepository.uploadWorkoutImage(imageUri, workoutId)
                 Log.d(TAG, "Image uploaded successfully: ${workoutImage.id}")
 
-                // The image will be automatically picked up by the flow, so we don't need to manually update state
-
                 Log.d(TAG, "Successfully uploaded image for workout: $workoutId")
             } catch (e: Exception) {
                 Log.e(TAG, "Error uploading image to workout $workoutId: ${e.message}", e)
-                // Don't rethrow, but the UI should show an error state
             } finally {
                 _uploadingImage.value = false
             }
@@ -263,8 +284,6 @@ class GymTrackerViewModel @Inject constructor(
 
                 storageRepository.deleteWorkoutImage(workoutImage)
 
-                // The deletion will be automatically picked up by the flow, so we don't need to manually update state
-
                 Log.d(TAG, "Successfully deleted image: ${workoutImage.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error deleting image ${workoutImage.id}: ${e.message}", e)
@@ -272,11 +291,17 @@ class GymTrackerViewModel @Inject constructor(
         }
     }
 
+    // Clear all image flows when logging out
+    private fun clearImageFlows() {
+        activeImageFlowJobs.values.forEach { it.cancel() }
+        activeImageFlowJobs.clear()
+        _workoutImages.value = emptyMap()
+    }
+
     // Clean up when ViewModel is cleared
     override fun onCleared() {
         super.onCleared()
         // Cancel all active image flow jobs
-        activeImageFlowJobs.values.forEach { it.cancel() }
-        activeImageFlowJobs.clear()
+        clearImageFlows()
     }
 }
