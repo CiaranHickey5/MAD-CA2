@@ -8,7 +8,8 @@
 | Student Number | 20088959      |
 
 ## Features Demonstration Video
-...
+
+[![Assignment Two - MAD2 Demo Video](https://youtu.be/WGFutvkOtPQ)](https://youtu.be/WGFutvkOtPQ)
 
 ## Technical Report
 
