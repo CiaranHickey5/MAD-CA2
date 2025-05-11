@@ -23,7 +23,9 @@ class StorageRepository @Inject constructor() {
 
     // Get the current user ID or return guest if not logged in
     private fun getUserId(): String {
-        return auth.currentUser?.uid ?: "guest"
+        val userId = auth.currentUser?.uid ?: "guest"
+        Log.d(TAG, "Getting user ID: $userId")
+        return userId
     }
 
     // Reference to the user's images collection in Firestore
@@ -37,15 +39,21 @@ class StorageRepository @Inject constructor() {
     // Upload an image to Firebase Storage and save its metadata in Firestore
     suspend fun uploadWorkoutImage(imageUri: Uri, workoutId: String): WorkoutImage {
         try {
+            Log.d(TAG, "Starting upload for workout: $workoutId")
+
             // Generate a unique file name
             val fileName = "workout_image_${UUID.randomUUID()}.jpg"
             val imageRef = getStorageRef().child(fileName)
 
+            Log.d(TAG, "Uploading to path: ${imageRef.path}")
+
             // Upload the file to Firebase Storage
             val uploadTask = imageRef.putFile(imageUri).await()
+            Log.d(TAG, "Upload task completed")
 
             // Get the download URL
             val downloadUrl = imageRef.downloadUrl.await().toString()
+            Log.d(TAG, "Download URL obtained: $downloadUrl")
 
             // Create a WorkoutImage object
             val workoutImage = WorkoutImage(
@@ -55,6 +63,8 @@ class StorageRepository @Inject constructor() {
                 fileName = fileName
             )
 
+            Log.d(TAG, "Saving metadata to Firestore: $workoutImage")
+
             // Save metadata to Firestore
             getImagesCollection().document(workoutImage.id).set(workoutImage).await()
 
@@ -62,44 +72,79 @@ class StorageRepository @Inject constructor() {
             return workoutImage
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error uploading image: ${e.message}", e)
+            Log.e(TAG, "Error uploading image for workout $workoutId: ${e.message}", e)
+            Log.e(TAG, "Stack trace: ${e.stackTrace.joinToString("\n")}")
             throw e
         }
     }
 
     // Get all images for a specific workout
     fun getWorkoutImagesFlow(workoutId: String): Flow<List<WorkoutImage>> = callbackFlow {
+        Log.d(TAG, "Creating image flow for workout: $workoutId")
+
         val listenerRegistration = getImagesCollection()
             .whereEqualTo("workoutId", workoutId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    Log.e(TAG, "Error listening for images: ${error.message}", error)
                     close(error)
                     return@addSnapshotListener
                 }
 
+                Log.d(TAG, "Received snapshot for workout $workoutId")
+
                 if (snapshot != null) {
-                    val images = snapshot.documents.mapNotNull { doc ->
-                        doc.toObject(WorkoutImage::class.java)
+                    try {
+                        val images = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                Log.d(TAG, "Processing document: ${doc.id}")
+                                val image = doc.toObject(WorkoutImage::class.java)
+                                if (image != null) {
+                                    Log.d(TAG, "Successfully converted document to WorkoutImage: ${image.id}")
+                                    image
+                                } else {
+                                    Log.w(TAG, "Document ${doc.id} could not be converted to WorkoutImage")
+                                    null
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error converting document ${doc.id}: ${e.message}", e)
+                                null
+                            }
+                        }
+                        Log.d(TAG, "Found ${images.size} images for workout $workoutId")
+                        trySend(images)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing snapshot: ${e.message}", e)
+                        close(e)
                     }
-                    trySend(images)
+                } else {
+                    Log.d(TAG, "Snapshot is null for workout $workoutId")
+                    trySend(emptyList())
                 }
             }
 
-        awaitClose { listenerRegistration.remove() }
+        awaitClose {
+            Log.d(TAG, "Closing image flow listener for workout: $workoutId")
+            listenerRegistration.remove()
+        }
     }
 
     // Delete an image
     suspend fun deleteWorkoutImage(workoutImage: WorkoutImage) {
         try {
+            Log.d(TAG, "Deleting image: ${workoutImage.id}")
+
             // Delete from Firestore
             getImagesCollection().document(workoutImage.id).delete().await()
+            Log.d(TAG, "Deleted from Firestore: ${workoutImage.id}")
 
             // Delete from Storage
             getStorageRef().child(workoutImage.fileName).delete().await()
+            Log.d(TAG, "Deleted from Storage: ${workoutImage.fileName}")
 
             Log.d(TAG, "Successfully deleted image: ${workoutImage.id}")
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting image: ${e.message}", e)
+            Log.e(TAG, "Error deleting image ${workoutImage.id}: ${e.message}", e)
             throw e
         }
     }
@@ -107,6 +152,8 @@ class StorageRepository @Inject constructor() {
     // Delete all images for a workout
     suspend fun deleteAllWorkoutImages(workoutId: String) {
         try {
+            Log.d(TAG, "Deleting all images for workout: $workoutId")
+
             // Get images
             val images = getImagesCollection()
                 .whereEqualTo("workoutId", workoutId)
@@ -114,14 +161,17 @@ class StorageRepository @Inject constructor() {
                 .await()
                 .toObjects(WorkoutImage::class.java)
 
+            Log.d(TAG, "Found ${images.size} images to delete for workout $workoutId")
+
             // Delete images
             images.forEach { workoutImage ->
+                Log.d(TAG, "Deleting image ${workoutImage.id} for workout $workoutId")
                 deleteWorkoutImage(workoutImage)
             }
 
             Log.d(TAG, "Successfully deleted all images for workout: $workoutId")
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting workout images: ${e.message}", e)
+            Log.e(TAG, "Error deleting workout images for $workoutId: ${e.message}", e)
             throw e
         }
     }

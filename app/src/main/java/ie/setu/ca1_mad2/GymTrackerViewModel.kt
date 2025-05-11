@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,6 +45,9 @@ class GymTrackerViewModel @Inject constructor(
     private val _uploadingImage = MutableStateFlow(false)
     val uploadingImage: StateFlow<Boolean> = _uploadingImage.asStateFlow()
 
+    // Collection to track active image flow jobs to prevent duplicates
+    private val activeImageFlowJobs = mutableMapOf<String, Job>()
+
     // Filtered workouts based on muscle group filters
     val filteredWorkouts = combine(workouts, filterMuscleGroups) { workoutList, muscleGroups ->
         if (muscleGroups.isEmpty()) {
@@ -64,6 +68,7 @@ class GymTrackerViewModel @Inject constructor(
         // Collect exercises
         viewModelScope.launch {
             repository.exercises.collect { exerciseList ->
+                Log.d(TAG, "Exercises updated: ${exerciseList.size} items")
                 _exercises.value = exerciseList
             }
         }
@@ -71,6 +76,7 @@ class GymTrackerViewModel @Inject constructor(
         // Collect workouts
         viewModelScope.launch {
             repository.workouts.collect { workoutList ->
+                Log.d(TAG, "Workouts updated: ${workoutList.size} items")
                 _workouts.value = workoutList
             }
         }
@@ -135,6 +141,10 @@ class GymTrackerViewModel @Inject constructor(
                 // Delete all images for this workout
                 storageRepository.deleteAllWorkoutImages(workoutId)
 
+                // Cancel the image flow job for this workout
+                activeImageFlowJobs[workoutId]?.cancel()
+                activeImageFlowJobs.remove(workoutId)
+
                 // Remove the images from the state
                 val updatedImagesMap = _workoutImages.value.toMutableMap()
                 updatedImagesMap.remove(workoutId)
@@ -187,16 +197,18 @@ class GymTrackerViewModel @Inject constructor(
     fun uploadWorkoutImage(imageUri: Uri, workoutId: String) {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Starting image upload for workout: $workoutId")
                 _uploadingImage.value = true
-                val workoutImage = storageRepository.uploadWorkoutImage(imageUri, workoutId)
 
-                // Update the images map with the new image
-                val currentImages = _workoutImages.value[workoutId] ?: emptyList()
-                _workoutImages.value = _workoutImages.value + (workoutId to (currentImages + workoutImage))
+                val workoutImage = storageRepository.uploadWorkoutImage(imageUri, workoutId)
+                Log.d(TAG, "Image uploaded successfully: ${workoutImage.id}")
+
+                // The image will be automatically picked up by the flow, so we don't need to manually update state
 
                 Log.d(TAG, "Successfully uploaded image for workout: $workoutId")
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading image: ${e.message}", e)
+                Log.e(TAG, "Error uploading image to workout $workoutId: ${e.message}", e)
+                // Don't rethrow, but the UI should show an error state
             } finally {
                 _uploadingImage.value = false
             }
@@ -205,32 +217,66 @@ class GymTrackerViewModel @Inject constructor(
 
     // Load images for a workout
     fun loadWorkoutImages(workoutId: String) {
-        viewModelScope.launch {
+        // Check if we already have an active flow for this workout
+        if (activeImageFlowJobs.containsKey(workoutId)) {
+            Log.d(TAG, "Image flow already active for workout: $workoutId")
+            return
+        }
+
+        Log.d(TAG, "Loading images for workout: $workoutId")
+
+        // Create a new job for this image flow
+        val job = viewModelScope.launch {
             try {
                 storageRepository.getWorkoutImagesFlow(workoutId).collect { images ->
-                    _workoutImages.value = _workoutImages.value + (workoutId to images)
+                    Log.d(TAG, "Received ${images.size} images for workout $workoutId")
+
+                    // Use a set to remove duplicates based on image ID
+                    val uniqueImages = images.distinctBy { it.id }
+
+                    // Always update the state with the latest images
+                    val currentMap = _workoutImages.value.toMutableMap()
+                    currentMap[workoutId] = uniqueImages
+                    _workoutImages.value = currentMap
+
+                    Log.d(TAG, "Updated workout images state. Current map size: ${_workoutImages.value.size}")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading workout images: ${e.message}", e)
+                Log.e(TAG, "Error loading workout images for $workoutId: ${e.message}", e)
+
+                // Set empty list on error to prevent crash
+                val currentMap = _workoutImages.value.toMutableMap()
+                currentMap[workoutId] = emptyList()
+                _workoutImages.value = currentMap
             }
         }
+
+        // Store the job so we can cancel it later if needed
+        activeImageFlowJobs[workoutId] = job
     }
 
     // Delete an image
     fun deleteWorkoutImage(workoutImage: WorkoutImage) {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Deleting image: ${workoutImage.id}")
+
                 storageRepository.deleteWorkoutImage(workoutImage)
 
-                val workoutId = workoutImage.workoutId
-                val currentImages = _workoutImages.value[workoutId] ?: emptyList()
-                val updatedImages = currentImages.filter { it.id != workoutImage.id }
-                _workoutImages.value = _workoutImages.value + (workoutId to updatedImages)
+                // The deletion will be automatically picked up by the flow, so we don't need to manually update state
 
                 Log.d(TAG, "Successfully deleted image: ${workoutImage.id}")
             } catch (e: Exception) {
-                Log.e(TAG, "Error deleting image: ${e.message}", e)
+                Log.e(TAG, "Error deleting image ${workoutImage.id}: ${e.message}", e)
             }
         }
+    }
+
+    // Clean up when ViewModel is cleared
+    override fun onCleared() {
+        super.onCleared()
+        // Cancel all active image flow jobs
+        activeImageFlowJobs.values.forEach { it.cancel() }
+        activeImageFlowJobs.clear()
     }
 }

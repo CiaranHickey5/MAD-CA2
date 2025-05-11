@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import coil.compose.AsyncImage
 import ie.setu.ca1_mad2.model.WorkoutImage
 
@@ -52,11 +53,16 @@ fun WorkoutImageGallery(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
+            // Use fixed height for the grid to prevent infinite constraints
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                // Add a fixed height to prevent infinite constraints
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height((images.size / 2 + images.size % 2) * 150.dp + 16.dp) // Calculate height based on number of items
             ) {
                 items(images) { image ->
                     WorkoutImageItem(
